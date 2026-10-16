@@ -1,0 +1,17 @@
+{
+  "description": "Completed orders API requests grouped by outcome and endpoint.",
+  "filter": "resource.type=\"cloud_run_revision\" AND resource.labels.service_name=\"orders-api\" AND resource.labels.location=\"us-central1\" AND jsonPayload.message=\"request_completed\"",
+  "metricDescriptor": {
+    "metricKind": "DELTA",
+    "valueType": "INT64",
+    "unit": "1",
+    "labels": [
+      {"key": "outcome", "valueType": "STRING", "description": "Request outcome."},
+      {"key": "endpoint", "valueType": "STRING", "description": "API operation endpoint."}
+    ]
+  },
+  "labelExtractors": {
+    "outcome": "EXTRACT(jsonPayload.outcome)",
+    "endpoint": "EXTRACT(jsonPayload.endpoint)"
+  }
+}

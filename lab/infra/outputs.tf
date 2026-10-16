@@ -5,7 +5,7 @@ output "function_url" {
 
 output "log_analytics_view" {
   description = "Table name for SQL queries in Log Analytics"
-  value                    = "`${var.project_id}.global._Default._Default`"
+  value       = "`${var.project_id}.global._Default._Default`"
 }
 
 output "dashboards_console" {
