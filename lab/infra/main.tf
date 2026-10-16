@@ -59,29 +59,29 @@ resource "google_service_account" "build" {
 
 resource "google_project_iam_member" "runtime_roles" {
   for_each = toset(["roles/logging.logWriter", "roles/monitoring.metricWriter"])
-  project            = var.project_id
-  role               = each.value
-  member             = "serviceAccount:${google_service_account.runtime.email}"
+  project  = var.project_id
+  role     = each.value
+  member   = "serviceAccount:${google_service_account.runtime.email}"
 }
 
 resource "google_project_iam_member" "build_roles" {
   for_each = toset(["roles/cloudbuild.builds.builder", "roles/logging.logWriter"])
-  project            = var.project_id
-  role               = each.value
-  member             = "serviceAccount:${google_service_account.build.email}"
+  project  = var.project_id
+  role     = each.value
+  member   = "serviceAccount:${google_service_account.build.email}"
 }
 
 resource "google_project_iam_member" "students" {
   for_each = local.student_grants
-  project = var.project_id
-  role               = each.value.role
-  member             = each.value.member
+  project  = var.project_id
+  role     = each.value.role
+  member   = each.value.member
 }
 
 # Source code
 resource "google_storage_bucket" "source" {
-  name                                   = "${var.project_id}-${var.function_name}-src"
-  location                               = var.region
+  name                        = "${var.project_id}-${var.function_name}-src"
+  location                    = var.region
   uniform_bucket_level_access = true
   force_destroy               = true
 
@@ -90,8 +90,10 @@ resource "google_storage_bucket" "source" {
 
 data "archive_file" "source" {
   type        = "zip"
-  source_dir = var.source_dir
+  source_dir  = var.source_dir
   output_path = "${path.module}/.build/function-source.zip"
+  # Local Python validation must not change the deployed source archive.
+  excludes = ["**/__pycache__/**", "**/*.pyc", ".venv/**", ".env", ".env.*"]
 }
 
 # The hash in the name forces a redeploy whenever the code changes
@@ -107,8 +109,8 @@ resource "google_cloudfunctions2_function" "api" {
   location = var.region
 
   build_config {
-    runtime                            = var.runtime
-    entry_point                        = var.entry_point
+    runtime         = var.runtime
+    entry_point     = var.entry_point
     service_account = google_service_account.build.id
 
     source {
@@ -120,14 +122,14 @@ resource "google_cloudfunctions2_function" "api" {
   }
 
   service_config {
-    available_memory                                     = "512Mi"
-    available_cpu                                      = "1"
-    timeout_seconds                                    = 60
-    min_instance_count                                 = 0
-    max_instance_count                                 = var.max_instances
+    available_memory                 = "512Mi"
+    available_cpu                    = "1"
+    timeout_seconds                  = 60
+    min_instance_count               = 0
+    max_instance_count               = var.max_instances
     max_instance_request_concurrency = var.concurrency
     service_account_email            = google_service_account.runtime.email
-    ingress_settings                                   = "ALLOW_ALL"
+    ingress_settings                 = "ALLOW_ALL"
 
     environment_variables = merge(var.extra_env, {
       FAILURE_RATE     = tostring(var.failure_rate)
@@ -144,10 +146,10 @@ resource "google_cloudfunctions2_function" "api" {
 # Public access for the simulator
 resource "google_cloud_run_v2_service_iam_member" "public" {
 
-  count              = var.allow_unauthenticated ? 1 : 0
-  project = var.project_id
+  count    = var.allow_unauthenticated ? 1 : 0
+  project  = var.project_id
   location = var.region
-  name               = google_cloudfunctions2_function.api.name
-  role               = "roles/run.invoker"
-  member             = "allUsers"
+  name     = google_cloudfunctions2_function.api.name
+  role     = "roles/run.invoker"
+  member   = "allUsers"
 }

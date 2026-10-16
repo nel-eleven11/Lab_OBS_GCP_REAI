@@ -1,0 +1,204 @@
+{
+  "displayName": "Observable Orders API",
+  "mosaicLayout": {
+    "columns": 12,
+    "tiles": [
+      {
+        "width": 12,
+        "height": 1,
+        "widget": {
+          "title": "Orders API observability",
+          "text": {
+            "content": "Native Cloud Run metrics show incoming request volume and platform-observed latency. Log-based metrics and Log Analytics show application outcomes, backend latency, operation mix, and business attributes. Metrics begin counting only after their creation.",
+            "format": "MARKDOWN"
+          }
+        }
+      },
+      {
+        "xPos": 0,
+        "yPos": 1,
+        "width": 6,
+        "height": 4,
+        "widget": {
+          "title": "Requests by HTTP response class",
+          "xyChart": {
+            "dataSets": [
+              {
+                "timeSeriesQuery": {"timeSeriesFilter": {
+                  "filter": "metric.type=\"run.googleapis.com/request_count\" AND resource.type=\"cloud_run_revision\" AND resource.labels.service_name=\"orders-api\" AND resource.labels.location=\"us-central1\"",
+                  "aggregation": {
+                    "alignmentPeriod": "60s",
+                    "perSeriesAligner": "ALIGN_SUM",
+                    "crossSeriesReducer": "REDUCE_SUM",
+                    "groupByFields": ["metric.label.response_code_class"]
+                  }
+                }},
+                "plotType": "STACKED_BAR",
+                "legendTemplate": "HTTP {{response_code_class}}"
+              }
+            ],
+            "timeshiftDuration": "0s",
+            "yAxis": {"label": "Requests per minute", "scale": "LINEAR"},
+            "chartOptions": {"mode": "COLOR"}
+          }
+        }
+      },
+      {
+        "xPos": 6,
+        "yPos": 1,
+        "width": 6,
+        "height": 4,
+        "widget": {
+          "title": "Completed requests by application outcome",
+          "xyChart": {
+            "dataSets": [
+              {
+                "timeSeriesQuery": {"timeSeriesFilter": {
+                  "filter": "metric.type=\"logging.googleapis.com/user/orders_api_request_outcomes\" AND resource.type=\"cloud_run_revision\" AND resource.labels.service_name=\"orders-api\"",
+                  "aggregation": {
+                    "alignmentPeriod": "60s",
+                    "perSeriesAligner": "ALIGN_SUM",
+                    "crossSeriesReducer": "REDUCE_SUM",
+                    "groupByFields": ["metric.label.outcome"]
+                  }
+                }},
+                "plotType": "STACKED_BAR",
+                "legendTemplate": "{{outcome}}"
+              }
+            ],
+            "yAxis": {"label": "Requests per minute", "scale": "LINEAR"},
+            "chartOptions": {"mode": "COLOR"}
+          }
+        }
+      },
+      {
+        "xPos": 0,
+        "yPos": 5,
+        "width": 6,
+        "height": 4,
+        "widget": {
+          "title": "Cloud Run request latency (P50 / P95)",
+          "xyChart": {
+            "dataSets": [
+              {
+                "timeSeriesQuery": {"timeSeriesFilter": {
+                  "filter": "metric.type=\"run.googleapis.com/request_latencies\" AND resource.type=\"cloud_run_revision\" AND resource.labels.service_name=\"orders-api\" AND resource.labels.location=\"us-central1\"",
+                  "aggregation": {
+                    "alignmentPeriod": "60s",
+                    "perSeriesAligner": "ALIGN_PERCENTILE_50",
+                    "crossSeriesReducer": "REDUCE_MEAN"
+                  }
+                }},
+                "plotType": "LINE",
+                "legendTemplate": "P50"
+              },
+              {
+                "timeSeriesQuery": {"timeSeriesFilter": {
+                  "filter": "metric.type=\"run.googleapis.com/request_latencies\" AND resource.type=\"cloud_run_revision\" AND resource.labels.service_name=\"orders-api\" AND resource.labels.location=\"us-central1\"",
+                  "aggregation": {
+                    "alignmentPeriod": "60s",
+                    "perSeriesAligner": "ALIGN_PERCENTILE_95",
+                    "crossSeriesReducer": "REDUCE_MEAN"
+                  }
+                }},
+                "plotType": "LINE",
+                "legendTemplate": "P95"
+              }
+            ],
+            "yAxis": {"label": "Latency (ms)", "scale": "LINEAR"},
+            "chartOptions": {"mode": "COLOR"}
+          }
+        }
+      },
+      {
+        "xPos": 6,
+        "yPos": 5,
+        "width": 6,
+        "height": 4,
+        "widget": {
+          "title": "Backend latency by operation (P95)",
+          "xyChart": {
+            "dataSets": [
+              {
+                "timeSeriesQuery": {"timeSeriesFilter": {
+                  "filter": "metric.type=\"logging.googleapis.com/user/orders_api_backend_latency_ms\" AND resource.type=\"cloud_run_revision\" AND resource.labels.service_name=\"orders-api\"",
+                  "aggregation": {
+                    "alignmentPeriod": "60s",
+                    "perSeriesAligner": "ALIGN_PERCENTILE_95",
+                    "crossSeriesReducer": "REDUCE_MEAN",
+                    "groupByFields": ["metric.label.endpoint"]
+                  }
+                }},
+                "plotType": "LINE",
+                "legendTemplate": "{{endpoint}}"
+              }
+            ],
+            "yAxis": {"label": "Backend latency (ms)", "scale": "LINEAR"},
+            "chartOptions": {"mode": "COLOR"}
+          }
+        }
+      },
+      {
+        "xPos": 0,
+        "yPos": 9,
+        "width": 6,
+        "height": 4,
+        "widget": {
+          "title": "HTTP status codes by minute (Log Analytics)",
+          "xyChart": {
+            "dataSets": [
+              {
+                "timeSeriesQuery": {
+                  "opsAnalyticsQuery": {
+                    "sql": "SELECT TIMESTAMP_TRUNC(timestamp, MINUTE) AS minute, CAST(json_payload.status_code AS STRING) AS status_code, COUNT(*) AS request_count FROM `observableapi.global._Default._Default` WHERE resource.type = 'cloud_run_revision' AND resource.labels.service_name = 'orders-api' AND json_payload.message = 'request_completed' GROUP BY minute, status_code ORDER BY minute"
+                  }
+                },
+                "plotType": "STACKED_AREA",
+                "legendTemplate": "HTTP {{status_code}}"
+              }
+            ],
+            "yAxis": {"label": "Requests per minute", "scale": "LINEAR"},
+            "chartOptions": {"mode": "COLOR"}
+          }
+        }
+      },
+      {
+        "xPos": 6,
+        "yPos": 9,
+        "width": 6,
+        "height": 4,
+        "widget": {
+          "title": "Operation and business attributes (Log Analytics)",
+          "xyChart": {
+            "dataSets": [
+              {
+                "timeSeriesQuery": {
+                  "opsAnalyticsQuery": {
+                    "sql": "SELECT TIMESTAMP_TRUNC(timestamp, MINUTE) AS minute, CAST(json_payload.endpoint AS STRING) AS endpoint, CAST(json_payload.category AS STRING) AS category, COUNT(*) AS request_count FROM `observableapi.global._Default._Default` WHERE resource.type = 'cloud_run_revision' AND resource.labels.service_name = 'orders-api' AND json_payload.message = 'request_completed' GROUP BY minute, endpoint, category ORDER BY minute"
+                  }
+                },
+                "plotType": "STACKED_AREA",
+                "legendTemplate": "{{endpoint}} / {{category}}"
+              }
+            ],
+            "yAxis": {"label": "Requests per minute", "scale": "LINEAR"},
+            "chartOptions": {"mode": "COLOR"}
+          }
+        }
+      },
+      {
+        "xPos": 0,
+        "yPos": 13,
+        "width": 12,
+        "height": 4,
+        "widget": {
+          "title": "Recent completed request logs",
+          "logsPanel": {
+            "filter": "resource.type=\"cloud_run_revision\" AND resource.labels.service_name=\"orders-api\" AND resource.labels.location=\"us-central1\" AND log_id(\"run.googleapis.com/stdout\") AND jsonPayload.message=\"request_completed\"",
+            "resourceNames": ["projects/observableapi"]
+          }
+        }
+      }
+    ]
+  }
+}
